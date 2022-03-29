@@ -1,6 +1,10 @@
 #include <ESP8266WiFi.h>
 #include <EEPROM.h>
 #include "SoftwareSerial.h"
+
+#include <ArduinoIoTCloud.h>
+#include <Arduino_ConnectionHandler.h>
+
 #include "packet.h"
 
 #define SSerialReceive 4          // GPIO4 = D2 pin <-> RS485 RO (Receive Out)
@@ -18,6 +22,38 @@ char *wifi_ssid = eeprom_data;
 char *wifi_password = 0;
 char *device_id = 0;
 char *device_key = 0;
+
+WiFiConnectionHandler *ArduinoIoTPreferredConnection = NULL;
+
+CloudTemperatureSensor airTemp;
+CloudTemperatureSensor poolTemp;
+CloudTemperatureSensor solarTemp;
+
+Packet packet;  // last received pentair packet.
+
+void initArduinoCloud() {
+  ArduinoCloud.setBoardId(device_id);
+  ArduinoCloud.setSecretDeviceKey(device_key);
+
+  ArduinoCloud.addProperty(airTemp, READ, 60 * SECONDS, NULL);
+  ArduinoCloud.addProperty(poolTemp, READ, 60 * SECONDS, NULL);
+  ArduinoCloud.addProperty(solarTemp, READ, 60 * SECONDS, NULL);
+
+  ArduinoIoTPreferredConnection = new WiFiConnectionHandler(wifi_ssid, wifi_password);
+  ArduinoCloud.begin(*ArduinoIoTPreferredConnection);
+
+  setDebugMessageLevel(10);
+  ArduinoCloud.printDebugInfo();
+}
+
+void updateArduinoCloud(){
+  airTemp = packet.system_status.air_temp_;
+  poolTemp = packet.system_status.pool_temp_;
+  solarTemp = packet.system_status.solar_temp_;
+  ArduinoCloud.update();
+}
+
+
 
 /**
  * Read secrets previously stored using utils/write_eeprom.ino
@@ -48,20 +84,8 @@ void readSecrets() {
   }
 }
 
-Packet packet;
-boolean SENT = true;
-
-void setup() {
-  Serial.begin(115200);
-
-  pinMode(LED_BUILTIN, OUTPUT);
-  pinMode(RS485DirectionControl, OUTPUT);
-  digitalWrite(RS485DirectionControl, RS485Receive);
-
-  rs485.begin(9600);
-
+void initServer() {
   // Connect to WiFi network
-  readSecrets();
   Serial.println();
   Serial.print("Connecting to '");
   Serial.print(wifi_ssid);
@@ -93,6 +117,21 @@ void setup() {
   server.begin();
   Serial.println("Server started");
   Serial.println(WiFi.localIP());
+}
+
+void setup() {
+  Serial.begin(115200);
+  delay(2000);
+
+  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(RS485DirectionControl, OUTPUT);
+  digitalWrite(RS485DirectionControl, RS485Receive);
+
+  rs485.begin(9600);
+
+  readSecrets();
+  initArduinoCloud();
+  // initServer();
 
   Serial.println("Monitor Ready.");
 }
@@ -137,6 +176,7 @@ void Ok(WiFiClient &client) {
   client.print("HTTP/1.1 200 OK\n");
 }
 
+boolean SENT = true;
 void ServeClient(WiFiClient &client) {
   // Wait until the client sends some data
   Serial.println("new client");
@@ -182,6 +222,7 @@ void loop() {
         // Main controller status broadcast is always followed by some quiet time, so we'll use that for now to send.
         send_ready = (packet.cid_ == COMMAND_SYSTEM_STATUS);
         packet.PrintTo(Serial);
+        updateArduinoCloud();
       } else {
         // skip invalids for now
         Serial.println("   ***   INVALID PACKET ***");
@@ -213,4 +254,3 @@ void loop() {
     ServeClient(client);
   }
 }
-
