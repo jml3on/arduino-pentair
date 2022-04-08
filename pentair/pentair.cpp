@@ -28,6 +28,7 @@ WiFiConnectionHandler *ArduinoIoTPreferredConnection = NULL;
 CloudTemperatureSensor airTemp;
 CloudTemperatureSensor poolTemp;
 CloudTemperatureSensor solarTemp;
+int salinity;
 
 Packet packet;  // last received pentair packet.
 
@@ -38,6 +39,7 @@ void initArduinoCloud() {
   ArduinoCloud.addProperty(airTemp, READ, 60 * SECONDS, NULL);
   ArduinoCloud.addProperty(poolTemp, READ, 60 * SECONDS, NULL);
   ArduinoCloud.addProperty(solarTemp, READ, 60 * SECONDS, NULL);
+  ArduinoCloud.addProperty(salinity, READ, 60 * SECONDS, NULL);
 
   ArduinoIoTPreferredConnection = new WiFiConnectionHandler(wifi_ssid, wifi_password);
   ArduinoCloud.begin(*ArduinoIoTPreferredConnection);
@@ -50,9 +52,9 @@ void updateArduinoCloud(){
   airTemp = packet.system_status.air_temp_;
   poolTemp = packet.system_status.pool_temp_;
   solarTemp = packet.system_status.solar_temp_;
+  salinity = packet.chlorinator_response.salinity_;
   ArduinoCloud.update();
 }
-
 
 
 /**
@@ -131,7 +133,7 @@ void setup() {
 
   readSecrets();
   initArduinoCloud();
-  // initServer();
+  initServer();
 
   Serial.println("Monitor Ready.");
 }
