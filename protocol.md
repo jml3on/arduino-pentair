@@ -608,10 +608,10 @@ These packets appears as pairs, which suggest a request/response.
 
 ### Chlorinator Request
 
-- Request is 3 bytes long
+3 bytes long
 - [0] always 0x50. maybe as command.
 - [1] ??, 0x00 when chlorination is disabled. 0x11 when not.
-- [3] % target of chlorination, between 0% and 100%. 0 when chlorination is disabled.
+- [2] % target of chlorination, between 0% and 100%. 0 when chlorination is disabled.
 
 Changing the spa% doesn't seem to affect the request. Maybe it gets sent when spa mode is on?
 
@@ -633,7 +633,11 @@ buffer:      ff 10 02 50 11 5a cd 10 03
 
 ### Chlorinator Response
 
-3rd byte here (66) could be the salinity ppm: 66 * 50 = 3300ppm
+4 bytes long
+- [0] always 0x50. maybe as command.
+- [1] ??, 0x00 when chlorination is disabled. 0x11 when not.
+- [2] appears to be the salinity ppm: 66 * 50 = 3300ppm
+- [3] bit 3 (mask 0x10) is set to 1 when the status light flashes green (inspect cell)
 
 ```
 version:     00
