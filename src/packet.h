@@ -77,8 +77,12 @@ struct ChlorinatorRequest : Command {  // @suppress("Class has a virtual method 
   void PrintTo(Print &printer);
 };
 
+
+#define INSPECT_CELL_MASK    0x10
+
 struct ChlorinatorResponse : Command {  // @suppress("Class has a virtual method and non-virtual destructor")
   uint16_t salinity_;  // salinity in ppm measure by the cell
+  uint8_t inspect_cell_; // flashing green status light - inspect cell
   const char* Name();
   void Read(const uint8_t *data);
   void PrintTo(Print &printer);

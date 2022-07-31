@@ -55,5 +55,29 @@ TEST_F(ChlorinatorTest, Response) {
   EXPECT_EQ(2700, actual.salinity_);
 }
 
+TEST_F(ChlorinatorTest, InspectCellFalse) {
+  ChlorinatorResponse &actual = p_.chlorinator_response;
+  P("00 12 45 80");
+
+  EXPECT_EQ(0, p_.version_);
+  EXPECT_EQ(DEVICE_CHLORINATOR, p_.source_);
+  EXPECT_EQ(DEVICE_CONTROL_CENTER, p_.target_);
+  EXPECT_EQ(COMMAND_CHLORINATOR, p_.cid_);
+  EXPECT_EQ(3450, actual.salinity_);
+  EXPECT_FALSE(actual.inspect_cell_);
+}
+
+TEST_F(ChlorinatorTest, InspectCellTrue) {
+  ChlorinatorResponse &actual = p_.chlorinator_response;
+  P("00 12 45 90");
+
+  EXPECT_EQ(0, p_.version_);
+  EXPECT_EQ(DEVICE_CHLORINATOR, p_.source_);
+  EXPECT_EQ(DEVICE_CONTROL_CENTER, p_.target_);
+  EXPECT_EQ(COMMAND_CHLORINATOR, p_.cid_);
+  EXPECT_EQ(3450, actual.salinity_);
+  EXPECT_TRUE(actual.inspect_cell_);
+}
+
 #endif // UNITTEST
 

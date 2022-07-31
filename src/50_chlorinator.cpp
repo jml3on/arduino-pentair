@@ -29,11 +29,15 @@ const char* ChlorinatorResponse::Name() {
 
 void ChlorinatorResponse::Read(const uint8_t *data) {
   salinity_ = (uint16_t) data[2] * (uint16_t) 50;
+  inspect_cell_ = data[3] & INSPECT_CELL_MASK;
 }
 
 void ChlorinatorResponse::PrintTo(Print &p) {
   PrintLabel(p, "ppm");
   p.print(salinity_);
+  p.println();
+  PrintLabel(p, "inspect");
+  p.print(inspect_cell_ ? "Yes" : "No");
   p.println();
 }
 
